@@ -1,4 +1,3 @@
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from joblib import dump
 import pandas as pd
@@ -18,10 +17,11 @@ def preprocess_data(data, target_column, save_pipeline_path, final_csv_path):
     if 'Person ID' in df.columns:
         df = df.drop(columns=['Person ID'])
 
-    # Hapus baris yang memiliki missing values
-    df = df.dropna()
+    # Hapus baris yang memiliki missing values di target atau fitur
+    df = df.dropna(subset=[target_column])  # Pastikan target tidak kosong
+    df = df.dropna()  # Hapus baris yang memiliki NaN di fitur lainnya
 
-    # Encode target jika bertipe object
+    # Encode target jika berupa string
     if df[target_column].dtype == 'object':
         le_target = LabelEncoder()
         df[target_column] = le_target.fit_transform(df[target_column])
@@ -35,26 +35,19 @@ def preprocess_data(data, target_column, save_pipeline_path, final_csv_path):
         le = LabelEncoder()
         df[col] = le.fit_transform(df[col])
 
-    # Split data
+    # Pisah fitur dan target
     X = df.drop(columns=[target_column])
     y = df[target_column]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Standardisasi fitur numerik
     scaler = StandardScaler()
-    X_train[numeric_features] = scaler.fit_transform(X_train[numeric_features])
-    X_test[numeric_features] = scaler.transform(X_test[numeric_features])
+    X[numeric_features] = scaler.fit_transform(X[numeric_features])
 
     # Gabungkan kembali
-    df_train = X_train.copy()
-    df_train[target_column] = y_train.reset_index(drop=True)
+    df_final = X.copy()
+    df_final[target_column] = y.reset_index(drop=True)
 
-    df_test = X_test.copy()
-    df_test[target_column] = y_test.reset_index(drop=True)
-
-    df_final = pd.concat([df_train, df_test], axis=0).reset_index(drop=True)
-
-    # Simpan CSV
+    # Simpan sebagai CSV
     os.makedirs(os.path.dirname(final_csv_path), exist_ok=True)
     df_final.to_csv(final_csv_path, index=False)
     print(f"Hasil preprocessing disimpan di: {final_csv_path}")
