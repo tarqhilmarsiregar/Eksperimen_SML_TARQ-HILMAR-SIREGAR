@@ -1,86 +1,84 @@
-import pandas as pd
-import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
 from sklearn.model_selection import train_test_split
 from joblib import dump
+import pandas as pd
+from numpy import savez_compressed
 
-def preprocess_data(data_path, target_column, save_pipeline_path, save_header_path):
-    # 1. Load data
-    df = pd.read_csv(data_path)
-    
-    # 2. Drop kolom ID jika ada
-    if 'Person ID' in df.columns:
-        df = df.drop(columns=['Person ID'])
+def preprocess_data(data, target_column, save_pipeline_path, save_header_path):
+    df = data.copy()
 
-    # 3. Pisahkan kolom Blood Pressure jika ada
+    # Pisah kolom 'Blood Pressure' jika ada
     if 'Blood Pressure' in df.columns:
         df[['Systolic_BP', 'Diastolic_BP']] = df['Blood Pressure'].str.split('/', expand=True)
         df['Systolic_BP'] = pd.to_numeric(df['Systolic_BP'])
         df['Diastolic_BP'] = pd.to_numeric(df['Diastolic_BP'])
         df = df.drop(columns=['Blood Pressure'])
 
-    # 4. Encode target column dengan LabelEncoder
-    le = LabelEncoder()
-    df[target_column] = le.fit_transform(df[target_column])
+    # Hapus 'Person ID' jika ada
+    if 'Person ID' in df.columns:
+        df = df.drop(columns=['Person ID'])
 
-    # 5. Identifikasi kolom numerik dan kategorikal
-    numeric_features = ['Age', 'Sleep Duration', 'Quality of Sleep', 'Physical Activity Level',
-                        'Stress Level', 'Heart Rate', 'Daily Steps', 'Systolic_BP', 'Diastolic_BP']
-    
-    categorical_features = [col for col in df.select_dtypes(include='object').columns if col != target_column]
+    # Encode target jika string
+    if df[target_column].dtype == 'object':
+        le = LabelEncoder()
+        df[target_column] = le.fit_transform(df[target_column])
 
-    # 6. Simpan nama-nama kolom fitur
-    column_names = df.drop(columns=[target_column]).columns
-    pd.DataFrame(columns=column_names).to_csv(save_header_path, index=False)
-    print(f"Nama kolom berhasil disimpan ke: {save_header_path}")
+    # Identifikasi fitur numerik dan kategorikal
+    numeric_features = df.select_dtypes(include=['int64', 'float64']).drop(columns=[target_column]).columns.tolist()
+    categorical_features = df.select_dtypes(include=['object']).columns.tolist()
 
-    # 7. Pipeline numerik
-    numeric_transformer = Pipeline(steps=[
+    # Simpan header kolom
+    pd.DataFrame(columns=df.drop(columns=[target_column]).columns).to_csv(save_header_path, index=False)
+    print(f"Header kolom disimpan ke: {save_header_path}")
+
+    # Pipeline untuk fitur numerik
+    numeric_transformer = Pipeline([
         ('imputer', SimpleImputer(strategy='mean')),
         ('scaler', StandardScaler())
     ])
 
-    # 8. Pipeline kategorikal
-    categorical_transformer = Pipeline(steps=[
+    # Pipeline untuk fitur kategorikal
+    categorical_transformer = Pipeline([
         ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
         ('encoder', OneHotEncoder(handle_unknown='ignore'))
     ])
 
-    # 9. Gabungkan dalam ColumnTransformer
-    preprocessor = ColumnTransformer(transformers=[
+    # Gabungkan pipeline dengan ColumnTransformer
+    preprocessor = ColumnTransformer([
         ('num', numeric_transformer, numeric_features),
         ('cat', categorical_transformer, categorical_features)
     ])
 
-    # 10. Split data
+    # Split data
     X = df.drop(columns=[target_column])
     y = df[target_column]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # 11. Fit-transform dan simpan pipeline
+    # Transformasi data
     X_train = preprocessor.fit_transform(X_train)
     X_test = preprocessor.transform(X_test)
 
+    # Simpan pipeline
     dump(preprocessor, save_pipeline_path)
-    print(f"Pipeline berhasil disimpan ke: {save_pipeline_path}")
+    print(f"Pipeline disimpan ke: {save_pipeline_path}")
 
     return X_train, X_test, y_train, y_test
 
 # Muat dataset kamu
-data = pd.read_csv('dataset_raw/Sleep_health_and_lifestyle_dataset.csv')
+data = pd.read_csv('../dataset_raw/Sleep_health_and_lifestyle_dataset.csv')
 
 # Panggil fungsi preprocessing
 X_train, X_test, y_train, y_test = preprocess_data(
     data,                            # DataFrame asli kamu
     'Sleep Disorder',                # Kolom target
-    'preprocessing/dataset_preprocessing/preprocessor_pipeline.joblib', # Lokasi untuk menyimpan pipeline
-    'preprocessing/dataset_preprocessing/data_header.csv'               # Lokasi untuk menyimpan nama-nama kolom (tanpa target)
+    'dataset_preprocessing/dataset_preprocessor_pipeline.joblib', # Lokasi untuk menyimpan pipeline
+    'dataset_preprocessing/data.csv'               # Lokasi untuk menyimpan nama-nama kolom (tanpa target)
 )
 
-savez_compressed('preprocessing/dataset_preprocessing/processed_data.npz',
+savez_compressed('dataset_preprocessing/processed_data.npz',
                  X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
 
 print("Preprocessing selesai dan hasil disimpan.")
