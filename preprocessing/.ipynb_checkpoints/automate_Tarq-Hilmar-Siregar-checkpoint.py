@@ -68,3 +68,19 @@ def preprocess_data(data_path, target_column, save_pipeline_path, save_header_pa
     print(f"Pipeline berhasil disimpan ke: {save_pipeline_path}")
 
     return X_train, X_test, y_train, y_test
+
+# Muat dataset kamu
+data = pd.read_csv('dataset_raw/Sleep_health_and_lifestyle_dataset.csv')
+
+# Panggil fungsi preprocessing
+X_train, X_test, y_train, y_test = preprocess_data(
+    data,                            # DataFrame asli kamu
+    'Sleep Disorder',                # Kolom target
+    'preprocessing/dataset_preprocessing/preprocessor_pipeline.joblib', # Lokasi untuk menyimpan pipeline
+    'preprocessing/dataset_preprocessing/data_header.csv'               # Lokasi untuk menyimpan nama-nama kolom (tanpa target)
+)
+
+savez_compressed('preprocessing/dataset_preprocessing/processed_data.npz',
+                 X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+
+print("Preprocessing selesai dan hasil disimpan.")

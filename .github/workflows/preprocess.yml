@@ -1,0 +1,36 @@
+# .github/workflows/preprocess.yml
+name: Preprocess Dataset
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  run-preprocessing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12.7'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run preprocessing script
+      run: |
+        python preprocessing/automate_Tarq-Hilmar-Siregar.py
+
+    - name: Upload output artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: hasil-preprocessing
+        path: |
+          preprocessing/dataset_preprocessing/
