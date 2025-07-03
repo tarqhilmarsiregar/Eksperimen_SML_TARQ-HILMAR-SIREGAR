@@ -29,7 +29,7 @@ jobs:
         python preprocessing/automate_Tarq-Hilmar-Siregar.py
 
     - name: Upload output artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: hasil-preprocessing
         path: |
