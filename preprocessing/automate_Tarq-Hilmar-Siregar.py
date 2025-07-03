@@ -18,6 +18,9 @@ def preprocess_data(data, target_column, save_pipeline_path, final_csv_path):
     if 'Person ID' in df.columns:
         df = df.drop(columns=['Person ID'])
 
+    # Hapus baris yang memiliki missing values
+    df = df.dropna()
+
     # Encode target jika bertipe object
     if df[target_column].dtype == 'object':
         le_target = LabelEncoder()
@@ -56,7 +59,7 @@ def preprocess_data(data, target_column, save_pipeline_path, final_csv_path):
     df_final.to_csv(final_csv_path, index=False)
     print(f"Hasil preprocessing disimpan di: {final_csv_path}")
 
-    # Simpan scaler (opsional)
+    # Simpan scaler
     dump(scaler, save_pipeline_path)
     print(f"Scaler disimpan di: {save_pipeline_path}")
 
@@ -67,6 +70,6 @@ data = pd.read_csv('dataset_raw/Sleep_health_and_lifestyle_dataset.csv')
 df_final = preprocess_data(
     data,
     target_column='Sleep Disorder',
-    save_pipeline_path='preprocessing/dataset_preprocessing/scaler.joblib',
+    save_pipeline_path='preprocessing/dataset_preprocessing/preprocessing.joblib',
     final_csv_path='preprocessing/dataset_preprocessing/final_dataset.csv'
 )
