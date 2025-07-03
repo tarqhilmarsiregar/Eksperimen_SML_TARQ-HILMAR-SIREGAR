@@ -74,11 +74,11 @@ data = pd.read_csv('dataset_raw/Sleep_health_and_lifestyle_dataset.csv')
 X_train, X_test, y_train, y_test = preprocess_data(
     data,                            # DataFrame asli kamu
     'Sleep Disorder',                # Kolom target
-    'dataset_preprocessing/dataset_preprocessor_pipeline.joblib', # Lokasi untuk menyimpan pipeline
-    'dataset_preprocessing/data.csv'               # Lokasi untuk menyimpan nama-nama kolom (tanpa target)
+    'preprocessing/dataset_preprocessing/dataset_preprocessor_pipeline.joblib', # Lokasi untuk menyimpan pipeline
+    'preprocessing/dataset_preprocessing/data.csv'               # Lokasi untuk menyimpan nama-nama kolom (tanpa target)
 )
 
-savez_compressed('dataset_preprocessing/processed_data.npz',
+savez_compressed('preprocessing/dataset_preprocessing/processed_data.npz',
                  X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
 
 print("Preprocessing selesai dan hasil disimpan.")
